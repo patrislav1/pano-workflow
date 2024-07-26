@@ -2,56 +2,26 @@
 
 ## Create panorama
 
-* Make new hugin project, add photos
+* Call `pano-init.sh`, pointing it at the first image of the series. It will select 8 consecutive image files for the panorama.
 
-* Apply SLANT template (`template.pto`)
+e.g.
 
-* Optimize control points (positions, view and barrel)
-
-* Optimize photometric (High dynamic range)
-
-* Set stitcher to low dynamic range, enblend
-
-* Tweak pano until good, Move/straighten/etc.
-
-* Save to pano.pto
+```bash
+$ ./pano-init.sh ~/Pictures/RAW/slant-test/DSCF0025.JPG
+Generating panorama with:
+/home/patrick/Pictures/RAW/slant-test/DSCF0025.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0026.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0027.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0028.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0029.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0030.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0031.JPG
+/home/patrick/Pictures/RAW/slant-test/DSCF0032.JPG
+Log file of panorama generation: /home/patrick/src/pano-workflow/tmp/pano.log
+Done, generated panorama: /home/patrick/src/pano-workflow/tmp/pano_generated.pto
+Copying to /home/patrick/src/pano-workflow/tmp/pano_final.pto and opening in hugin.
+```
 
 ## Patch zenit & nadir
 
-* Create zenit/nadir rectilinear images
-
-  ```bash
-  pano_modify --projection=0 --fov=90x90 --rotate=0,90,0 pano.pto -o nadir.pto
-  pano_modify --projection=0 --fov=90x90 --rotate=0,-90,0 pano.pto -o zenit.pto
-  hugin_executor --stitching nadir.pto
-  mv *-*.tif nadir.tif
-  hugin_executor --stitching zenit.pto
-  mv *-*.tif zenit.tif
-  ```
-
-* Patch zenit / nadir
-  * IMPORTANT: when exporting from GIMP, deselect "layers" and "color profile" in TIF options
-  
-* Open pano project in Hugin
-  * Add zenit / nadir images with settings: rectilinear & 90deg FOV
-  * Set zenit to 90deg pitch and nadir to -90deg pitch
-  * Add include mask to nadir (hide the tripod)
-
-* Re-do photometric optimization
-
-* Stitch main panorama
-
-  ```bash
-  hugin_executor --stitching pano.pto
-  ```
-
-# Scripting
-
-* see also e.g. https://github.com/guettli/panorama/blob/4fef2c2b7d081bbf745644989ae319ebeed33e1b/panorama/panorama.py#L111
-* see also https://wiki.panotools.org/Category:Software:Hugin
-* pto_gen -o pano_img.pto (images...)
-* pto_template -o pano_templ.pto --template=template.pto pano_img.pto
-* cpfind -o pano_cp.pto --celeste --prealigned/--linearmatch --fullscale pano_templ.pto
-* cpclean -o pano_clean.pto pano_cp.pto
-* linefind?!?
-  
+TODO
