@@ -9,9 +9,112 @@ from gi.repository import Gimp
 gi.require_version('GimpUi', '3.0')
 from gi.repository import GimpUi
 
+gi.require_version('Gtk', '3.0')
+from gi.repository import Gtk
+
 from gi.repository import GLib, Gegl
 
+import json
+
 class ZenitNadirPatchHelper(Gimp.PlugIn):
+    PARASITE_NAME = "zenith-nadir-settings"
+
+    def load_state(self, image):
+        """Load state from the parasite attached to the image."""
+        parasite = image.get_parasite(self.PARASITE_NAME)
+        if parasite is not None:
+            state = json.loads(bytes(parasite.get_data()).decode('utf-8'))
+        else:
+            # Default values
+            state = {
+                "zenith_zoom": 100,
+                "zenith_mask": 30,
+                "nadir_zoom": 70,
+                "nadir_mask": 50
+            }
+        return state
+
+    def save_state(self, image, state):
+        """Save state to the parasite attached to the image."""
+        # 1 for PERSISTENT (see https://gitlab.gnome.org/GNOME/gimp/-/blob/master/libgimpbase/gimpparasite.h)
+        # (where is that constant in Python?)
+        parasite = Gimp.Parasite.new(self.PARASITE_NAME, 1, json.dumps(state).encode('utf-8'))
+        image.attach_parasite(parasite)
+
+    def run_gui(self, image):
+        GimpUi.init("zenith-nadir-plugin")
+        
+        state = self.load_state(image)
+
+        dialog = GimpUi.Dialog(title="Zenith and Nadir Settings", use_header_bar=True)
+        dialog.add_button("_Cancel", Gtk.ResponseType.CANCEL)
+        dialog.add_button("_OK", Gtk.ResponseType.OK)
+        
+        content_area = dialog.get_content_area()
+
+        # Create a grid to organize the widgets
+        grid = Gtk.Grid()
+        grid.set_column_spacing(10)
+        grid.set_row_spacing(10)
+        content_area.add(grid)
+
+        # Zenith Zoom
+        zenith_zoom_label = Gtk.Label(label="Zenith Zoom (%)")
+        zenith_zoom_entry = Gtk.SpinButton()
+        zenith_zoom_entry.set_digits(2)
+        zenith_zoom_entry.set_increments(1, 10)
+        zenith_zoom_entry.set_range(0, 500)
+        zenith_zoom_entry.set_value(state["zenith_zoom"])
+
+        # Zenith Mask Radius
+        zenith_mask_label = Gtk.Label(label="Zenith Mask Radius (%)")
+        zenith_mask_entry = Gtk.SpinButton()
+        zenith_mask_entry.set_digits(2)
+        zenith_mask_entry.set_increments(1, 10)
+        zenith_mask_entry.set_range(0, 100)
+        zenith_mask_entry.set_value(state["zenith_mask"])
+
+        # Nadir Zoom
+        nadir_zoom_label = Gtk.Label(label="Nadir Zoom (%)")
+        nadir_zoom_entry = Gtk.SpinButton()
+        nadir_zoom_entry.set_digits(2)
+        nadir_zoom_entry.set_increments(1, 10)
+        nadir_zoom_entry.set_range(0, 500)
+        nadir_zoom_entry.set_value(state["nadir_zoom"])
+
+        # Nadir Mask Radius
+        nadir_mask_label = Gtk.Label(label="Nadir Mask Radius (%)")
+        nadir_mask_entry = Gtk.SpinButton()
+        nadir_mask_entry.set_digits(2)
+        nadir_mask_entry.set_increments(1, 10)
+        nadir_mask_entry.set_range(0, 100)
+        nadir_mask_entry.set_value(state["nadir_mask"])
+
+        # Add widgets to the grid
+        grid.attach(zenith_zoom_label, 0, 0, 1, 1)
+        grid.attach(zenith_zoom_entry, 1, 0, 1, 1)
+        grid.attach(zenith_mask_label, 0, 1, 1, 1)
+        grid.attach(zenith_mask_entry, 1, 1, 1, 1)
+        grid.attach(nadir_zoom_label, 0, 2, 1, 1)
+        grid.attach(nadir_zoom_entry, 1, 2, 1, 1)
+        grid.attach(nadir_mask_label, 0, 3, 1, 1)
+        grid.attach(nadir_mask_entry, 1, 3, 1, 1)
+
+        grid.show_all()
+
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+            state["zenith_zoom"] = zenith_zoom_entry.get_value()
+            state["zenith_mask"] = zenith_mask_entry.get_value()
+            state["nadir_zoom"] = nadir_zoom_entry.get_value()
+            state["nadir_mask"] = nadir_mask_entry.get_value()
+
+            self.save_state(image, state)
+            dialog.destroy()
+            return True
+        else:
+            dialog.destroy()
+            return False
 
     def do_query_procedures(self):
         return ["ph-zenit-nadir-extract", "ph-zenit-nadir-reinsert"]
@@ -62,12 +165,17 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
         return procedure.new_return_values(Gimp.PDBStatusType.CALLING_ERROR, error)
 
     def extract_zenit_nadir(self, procedure, run_mode, image, n_drawables, drawables, config, run_data):
+        if not self.run_gui(image):
+            return self.error_helper(procedure, "Aborted")
+
         if n_drawables != 1:
             msg = f"Procedure '{procedure.get_name()}' only works with one drawable."
             return self.error_helper(procedure, msg)
         else:
             drawable = drawables[0]
 #
+        state = self.load_state(image)
+
         Gegl.init(None)
         graph = Gegl.Node()
         
@@ -79,7 +187,7 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
 
         pan_map = graph.create_child("gegl:panorama-projection")
         pan_map.set_property("tilt", 90.0)
-        pan_map.set_property("zoom", 70.0)
+        pan_map.set_property("zoom", state["nadir_zoom"])
         self.gegl_op(graph, src_buf, nadir_buf, pan_map)
 
         nadir_buf.flush()
@@ -92,7 +200,7 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
 
         pan_map = graph.create_child("gegl:panorama-projection")
         pan_map.set_property("tilt", -90.0)
-        pan_map.set_property("zoom", 100.0)
+        pan_map.set_property("zoom", state["zenith_zoom"])
         self.gegl_op(graph, src_buf, zenit_buf, pan_map)
 
         zenit_buf.flush()
@@ -115,6 +223,8 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
         zenit = zenit[0]
         nadir = nadir[0]
 
+        state = self.load_state(image)
+        
         Gegl.init(None)
         graph = Gegl.Node()
         
@@ -122,7 +232,7 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
         s_buf = zenit.get_shadow_buffer()
         pan_map = graph.create_child("gegl:panorama-projection")
         pan_map.set_property("tilt", -90.0)
-        pan_map.set_property("zoom", 100.0)
+        pan_map.set_property("zoom", state["zenith_zoom"])
         pan_map.set_property("inverse", True)
         self.gegl_op(graph, z_buf, s_buf, pan_map)
         s_buf.flush()
@@ -133,7 +243,7 @@ class ZenitNadirPatchHelper(Gimp.PlugIn):
         s_buf = nadir.get_shadow_buffer()
         pan_map = graph.create_child("gegl:panorama-projection")
         pan_map.set_property("tilt", 90.0)
-        pan_map.set_property("zoom", 70.0)
+        pan_map.set_property("zoom", state["nadir_zoom"])
         pan_map.set_property("inverse", True)
         self.gegl_op(graph, n_buf, s_buf, pan_map)
         s_buf.flush()
