@@ -9,12 +9,13 @@ with as little user intervention as possible.
 
 ## Components
 
-This repository is split into 2 parts:
+This repository is split into two parts:
 
-1) a script that uses the [Hugin CLI tools](https://wiki.panotools.org/Hugin#Hugin_components)
-   to create a [Hugin](https://hugin.sourceforge.io/) project file
+* A script that uses the [Hugin CLI tools](https://wiki.panotools.org/Hugin#Hugin_components)
+  to create a [Hugin](https://hugin.sourceforge.io/) project file
 
-2) a [GIMP](https://www.gimp.org/) plugin to automate the pre- and post-processing for patching the zenith and nadir
+* A [GIMP](https://www.gimp.org/) plugin to automate the pre- and post-processing
+  required for patching the zenith and nadir
 
 ## Requirements
 
@@ -33,7 +34,8 @@ This repository is split into 2 parts:
   flatpak install --user https://flathub.org/beta-repo/appstream/org.gimp.GIMP.flatpakref
   ```
 
-  * The GIMP step (zenith and nadir patching) is already possible with GIMP out of the box;
+  * The GIMP step (zenith and nadir patching) is already possible with GIMP out of the box
+    (see Filters -> Map -> Panorama Projection);
     the plugin only eliminates manual steps through automation.
 
   * To make GIMP aware of the plug-in, point it at the "gimp-plugin" folder in this repository:
@@ -43,7 +45,6 @@ This repository is split into 2 parts:
     * Add the path to the "gimp-plugin" directory
 
     * After restart, there should be a new menu entry (Filters -> Panorama)
-
 
 # Usage
 
@@ -79,3 +80,19 @@ This repository is split into 2 parts:
   * The Zenith and Nadir layers should be reverted into equirectangular projection.
 
 * The panorama can now be flattened & exported for further editing or publishing.
+
+# Compatibility
+
+The Hugin script was created for and tested with a Samyang 8mm f/2.8 Fisheye & Fuji X-E2
+on a [PT4Pano SLANT pano head](https://pt4pano.com/products/slant-nodalpunktadapter).
+This setup requires 8 single-row shots for a 360° x 180° panorama.
+
+The script should work out of the box with any single-row fisheye setup using 8 shots for 360˚.
+
+It should be easily adaptable for similar setups that use a different number of shots.
+
+# TODO
+
+* Support exposure bracketing for HDR panoramas.
+* Use ML / GAN to "auto-patch" zenith and nadir without user intervention.
+
