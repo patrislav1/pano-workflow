@@ -18,10 +18,14 @@ This repository is split into 2 parts:
 
 ## Requirements
 
-* The Hugin script should work with any recent version of the Hugin suite. It was tested with Hugin 2023.
+* `bash` and `python3`
 
-* The GIMP plugin requires a GIMP version with Python3 interface; at the time of writing this means installing
-  the [2.99.x development version](https://z-uo.medium.com/create-python3-plugin-for-gimp-the-basics-94ede94e9d1f),
+* The [Hugin suite](https://hugin.sourceforge.io/). The script should work with any recent version.
+  It was tested with Hugin 2023.
+
+* [GIMP](https://www.gimp.org/). The plugin requires a GIMP version with Python3 interface;
+  at the time of writing this means installing the
+  [2.99.x development version](https://z-uo.medium.com/create-python3-plugin-for-gimp-the-basics-94ede94e9d1f),
   that beta version is required until GIMP 3 is released.
 
   The beta version can be easily installed via flatpak:
@@ -29,7 +33,17 @@ This repository is split into 2 parts:
   flatpak install --user https://flathub.org/beta-repo/appstream/org.gimp.GIMP.flatpakref
   ```
 
-* `bash` and `python3`
+  * The GIMP step (zenith and nadir patching) is already possible with GIMP out of the box;
+    the plugin only eliminates manual steps through automation.
+
+  * To make GIMP aware of the plug-in, point it at the "gimp-plugin" folder in this repository:
+
+    * Edit -> Preferences -> Folders -> Plug-ins
+
+    * Add the path to the "gimp-plugin" directory
+
+    * After restart, there should be a new menu entry (Filters -> Panorama)
+
 
 # Usage
 
@@ -52,6 +66,16 @@ This repository is split into 2 parts:
 
 * Finally stitch the panorama from the GUI or on the command line (e.g. `hugin_executor --stitching tmp/pano_final.pto`).
 
-## Patch zenit & nadir
+## Patch zenith & nadir
 
-TODO
+* Open the stiched panorama in GIMP.
+
+* Run Filters -> Panorama -> Extract Zenith and Nadir
+  * Two new layers should appear, containing the Zenith and Nadir in rectilinear projection.
+
+* Patch the Zenith and Nadir layers until satisfied.
+
+* Run Filters -> Panorama -> Reinsert Zenith and Nadir
+  * The Zenith and Nadir layers should be reverted into equirectangular projection.
+
+* The panorama can now be flattened & exported for further editing or publishing.
