@@ -67,19 +67,25 @@ def main():
     args = parser.parse_args()
 
     lines, imgs = pto_parse(args.srcfile)
-    num_pos = len(imgs)
+
+    # Find number of images that are not linked to other images
+    num_pos = len([i for i in imgs if i["properties"]["r"][0] != "="])
+    stack_size = len(imgs) / num_pos
 
     slant_angle = args.slant_angle or 0.0
     yaw_increment = 360 / num_pos
     if args.counterclockwise:
         yaw_increment = -yaw_increment
 
-    print(f"Detected {len(imgs)} images, increment of {yaw_increment}")
+    print(f"Detected {len(imgs)} images, stack size {stack_size}, angle increment of {yaw_increment}")
 
     yaw_angle = 0
     for i in imgs:
-        i["properties"]["r"] = str(-slant_angle % 360)
-        i["properties"]["y"] = str(yaw_angle % 360)
+        p = i["properties"]
+        if p["r"].startswith("="):
+            continue
+        p["r"] = str(-slant_angle % 360)
+        p["y"] = str(yaw_angle % 360)
         yaw_angle += yaw_increment
 
     outfile = args.output if args.output else args.srcfile

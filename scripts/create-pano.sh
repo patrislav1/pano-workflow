@@ -9,7 +9,7 @@ SCRIPTDIR=$(dirname $(realpath $0))
 FIRST_IMAGE=${1}
 
 # Number of consecutive images to build the panorama from
-NUM_IMAGES=8
+NUM_IMAGES=24
 
 # Uncomment if images are in clockwise rotation
 COUNTERCLOCKWISE="--counterclockwise"
@@ -34,7 +34,8 @@ extract_img_parts() {
 
 generate_pano() {
 	# Create skeleton project with images
-	pto_gen -o ${PTODIR}/pano_1.pto --projection=${LENS_PROJ} --fov=${LENS_FOV} ${@}
+	pto_gen -o ${PTODIR}/pano_1.pto --projection=${LENS_PROJ} --fov=${LENS_FOV} --stacklength 3 --linkstacks ${@}
+	#pto_gen -o ${PTODIR}/pano_1.pto --projection=${LENS_PROJ} --fov=${LENS_FOV} ${@}
 
 	# Set starting points for image positions
 	${SCRIPTDIR}/set-angles.py ${PTODIR}/pano_1.pto -o ${PTODIR}/pano_2.pto ${COUNTERCLOCKWISE} --slant-angle 56
