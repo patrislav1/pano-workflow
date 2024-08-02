@@ -14,7 +14,7 @@ NUM_IMAGES=8
 # Uncomment if images are in clockwise rotation
 COUNTERCLOCKWISE="--counterclockwise"
 
-PTODIR=${SCRIPTDIR}/../tmp
+PTODIR=${SCRIPTDIR}/../pto
 PTOGENNAME=${PTODIR}/pano_generated.pto
 PTOFINALNAME=${PTODIR}/pano_final.pto
 
@@ -43,9 +43,9 @@ generate_pano() {
 	pto_var --opt="y,p,r,v,a,b,c,d,e,Vb,Vc,Vd,Ra,Rb,Rc,Rd,Re" -o ${PTODIR}/pano_3.pto ${PTODIR}/pano_2.pto
 
 	# Add control points; work around cpfind 360° limitation by appending the first picture after the end
-	${SCRIPTDIR}/img-append.py tmp/pano_3.pto tmp/pano_4.pto
+	${SCRIPTDIR}/img-append.py ${PTODIR}/pano_3.pto ${PTODIR}/pano_4.pto
 	cpfind -o ${PTODIR}/pano_5.pto --celeste --linearmatch --fullscale ${PTODIR}/pano_4.pto
-	${SCRIPTDIR}/img-remove.py tmp/pano_5.pto tmp/pano_6.pto
+	${SCRIPTDIR}/img-remove.py ${PTODIR}/pano_5.pto ${PTODIR}/pano_6.pto
 
 	# Clean up control points
 	cpclean -o ${PTODIR}/pano_7.pto ${PTODIR}/pano_6.pto
