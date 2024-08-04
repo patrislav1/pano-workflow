@@ -37,7 +37,7 @@ generate_pano() {
 	pto_gen -o ${PTODIR}/pano_1.pto --projection=${LENS_PROJ} --fov=${LENS_FOV} ${@}
 
 	# Set starting points for image positions
-	${SCRIPTDIR}/set-angles.py ${PTODIR}/pano_1.pto -o ${PTODIR}/pano_2.pto ${COUNTERCLOCKWISE} --slant-angle 56
+	${SCRIPTDIR}/set-angles.py ${PTODIR}/pano_1.pto -o ${PTODIR}/pano_2.pto ${COUNTERCLOCKWISE} --slant-angle -43
 
 	# Set variables for optimization
 	pto_var --opt="y,p,r,v,a,b,c,d,e,Vb,Vc,Vd,Ra,Rb,Rc,Rd,Re" -o ${PTODIR}/pano_3.pto ${PTODIR}/pano_2.pto
@@ -58,22 +58,36 @@ generate_pano() {
 }
 
 # Extract filename numeric part, prefix, and extension
-parts=($(extract_img_parts "$1"))
-prefix=${parts[0]}
+parts=($(extract_img_parts "$(basename $1)"))
+prefix="$(dirname $1)/${parts[0]}"
 start_idx=${parts[1]}
 start_idx=$((10#$start_idx)) # Remove leading zeros and prevent octal interpretation
 extension=${parts[2]}
 
-# Calculate the ending number
-end_idx=$((start_idx + NUM_IMAGES - 1))
+# Arbitrary end index to avoid endless loop
+end_idx=$((start_idx + 100))
+
+img_idx=0
 
 echo Generating panorama with:
 file_list=""
 for num in $(seq -f "%04g" $start_idx $end_idx); do
     file_name="${prefix}${num}${extension}"
+    if [[ ! -f $file_name ]]; then
+	continue
+    fi
     ls $file_name
     file_list+="${file_name} "
+    img_idx=$((img_idx+1))
+    if [[ $img_idx == $NUM_IMAGES ]]; then
+	break
+    fi
 done
+
+if [[ $img_idx != $NUM_IMAGES ]]; then
+    echo Not enough images found!
+    exit 1
+fi
 
 mkdir -p ${PTODIR}
 rm -rf ${PTODIR}/*
